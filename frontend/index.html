@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hostel Inventory Demand Prediction</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="brand-mark">H</span><div><strong>HostelStock</strong><small>Inventory Administration</small></div></div>
+    <nav>
+      <a href="#dashboard" data-view="dashboard" class="active">Dashboard</a>
+      <a href="#inventory" data-view="inventory">Inventory</a>
+      <a href="#predict" data-view="predict">Predict Demand</a>
+      <a href="#analytics" data-view="analytics">Analytics</a>
+      <a href="#alerts" data-view="alerts">Alerts <span class="count" id="alertCount">0</span></a>
+    </nav>
+    <div class="side-foot" id="modelInfo">Model: loading…</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+      <h1 id="viewTitle">Dashboard</h1>
+      <label class="toggle"><input type="checkbox" id="includeWater"> Include Drinking Water in charts</label>
+    </header>
+    <div id="apiError" class="banner error" hidden></div>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="cards">
+        <div class="card kpi"><span>Total Inventory Items</span><strong id="kpiItems">–</strong></div>
+        <div class="card kpi warn"><span>Items Requiring Attention</span><strong id="kpiAttention">–</strong></div>
+        <div class="card kpi"><span>Total Current Stock <em>(mixed units)</em></span><strong id="kpiStock">–</strong></div>
+        <div class="card kpi"><span>Predicted Demand <em id="kpiWeek"></em></span><strong id="kpiDemand">–</strong></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Current Stock vs Predicted Demand</h3><div class="chart"><canvas id="chStockDemand"></canvas></div></div>
+        <div class="card"><h3>Weekly Demand Trend</h3><div class="chart"><canvas id="chTrend"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Predicted Demand by Item</h3><div class="chart"><canvas id="chDemand"></canvas></div></div>
+        <div class="card"><h3>Recent Predictions</h3>
+          <div class="table-wrap"><table id="recentTable"><thead><tr><th>Item</th><th>Predicted</th><th>Stock</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INVENTORY -->
+    <section class="view" id="view-inventory">
+      <div class="card">
+        <h3>Inventory Status <small>Latest recorded week, predicted by the ML model for next week</small></h3>
+        <div class="table-wrap"><table id="invTable">
+          <thead><tr><th>Item</th><th>Current Stock</th><th>Previous Week Consumption</th><th>Predicted Demand</th><th>Stock Status</th><th>Recommended Action</th></tr></thead>
+          <tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- PREDICT -->
+    <section class="view" id="view-predict">
+      <div class="predict-layout">
+        <div class="card result-card" id="resultCard">
+          <div class="result-empty" id="resultEmpty">Enter inventory details and click <b>Predict Demand</b>.</div>
+          <div id="resultBody" hidden>
+            <span class="label">Predicted Next Week Demand</span>
+            <div class="big"><span id="rPred">–</span><small>units</small></div>
+            <div class="result-item" id="rItem"></div>
+            <div class="result-grid">
+              <div><span>Current Stock</span><b id="rStock">–</b></div>
+              <div><span>Stock Difference</span><b id="rDiff">–</b></div>
+              <div><span>Recommended Purchase</span><b id="rBuy">–</b></div>
+              <div><span>Inventory Status</span><b id="rStatus" class="badge">–</b></div>
+            </div>
+            <p class="note">Demand is predicted by the trained ML model. Status is a business rule applied after prediction.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Inventory Prediction</h3>
+          <form id="predictForm" novalidate>
+            <div class="form-grid">
+              <label>Item<select id="item" required></select></label>
+              <label>Week<input type="number" id="week" min="1" step="1" required></label>
+              <label>Previous Week Consumption<input type="number" id="prev1" min="0" step="any" required></label>
+              <label>Two Weeks Ago Consumption<input type="number" id="prev2" min="0" step="any" required></label>
+              <label>Three Weeks Ago Consumption<input type="number" id="prev3" min="0" step="any" required></label>
+              <label>Current Stock<input type="number" id="stock" min="0" step="any" required></label>
+              <label>Hostel Occupancy<input type="number" id="occupancy" min="0" step="1" required></label>
+              <label>Month (1-12)<input type="number" id="month" min="1" max="12" step="1" required></label>
+            </div>
+            <div id="formError" class="banner error" hidden></div>
+            <div class="actions">
+              <button type="submit" class="btn primary" id="predictBtn">Predict Demand</button>
+              <button type="button" class="btn" id="fillBtn">Fill with latest record</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="view" id="view-analytics">
+      <div class="grid2">
+        <div class="card"><h3>Weekly Demand Trend</h3><div class="chart"><canvas id="anTrend"></canvas></div></div>
+        <div class="card"><h3>Current Stock vs Predicted Demand</h3><div class="chart"><canvas id="anStockDemand"></canvas></div></div>
+        <div class="card"><h3>Most Demanded Items</h3><div class="chart"><canvas id="anTop"></canvas></div></div>
+        <div class="card"><h3>Inventory Category Distribution</h3><div class="chart"><canvas id="anCat"></canvas></div></div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="view" id="view-alerts">
+      <div class="card"><h3>Stock Alerts <small>Current Stock &lt; Predicted Next Week Demand</small></h3>
+        <ul class="alerts" id="alertList"></ul></div>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
